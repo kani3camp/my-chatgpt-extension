@@ -74,7 +74,7 @@ async function ensureOffscreenDocument() {
       .createDocument({
         url: OFFSCREEN_PATH,
         reasons: ["AUDIO_PLAYBACK"],
-        justification: "Play a short notification sound when ChatGPT finishes responding."
+        justification: "Play a short notification sound when an AI chat finishes responding."
       })
       .catch((error) => {
         const message = error instanceof Error ? error.message : String(error);

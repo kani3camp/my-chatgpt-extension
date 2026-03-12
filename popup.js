@@ -8,6 +8,12 @@ const volumeInput = document.getElementById("volume");
 const volumeValue = document.getElementById("volumeValue");
 const testButton = document.getElementById("testButton");
 const statusNode = document.getElementById("status");
+const debugStatusNode = document.getElementById("debugStatus");
+const SUPPORTED_URL_PREFIXES = [
+  "https://chatgpt.com/",
+  "https://chat.openai.com/",
+  "https://gemini.google.com/"
+];
 
 initialize().catch((error) => {
   showStatus(error instanceof Error ? error.message : String(error));
@@ -28,14 +34,27 @@ volumeInput.addEventListener("input", async () => {
 
 testButton.addEventListener("click", async () => {
   testButton.disabled = true;
-  showStatus("Playing test sound...");
+  showStatus("Testing in active AI tab...");
 
   try {
-    await playPreviewTone(Number(volumeInput.value) / 100);
-    showStatus("Test sound played.");
+    const tab = await getActiveSupportedTab();
+    if (!tab?.id) {
+      throw new Error("Open ChatGPT or Gemini in an active tab first.");
+    }
+
+    const result = await chrome.tabs.sendMessage(tab.id, {
+      type: "play-page-test-notification"
+    });
+
+    if (!result?.ok) {
+      throw new Error(result?.error || "The active AI tab test failed.");
+    }
+
+    showStatus("Active AI tab test sound played.");
   } catch (error) {
     showStatus(error instanceof Error ? error.message : String(error));
   } finally {
+    await refreshDebugStatus();
     testButton.disabled = false;
   }
 });
@@ -45,7 +64,8 @@ async function initialize() {
   enabledInput.checked = Boolean(settings.enabled);
   volumeInput.value = String(Math.round((settings.volume || DEFAULT_SETTINGS.volume) * 100));
   updateVolumeLabel(settings.volume || DEFAULT_SETTINGS.volume);
-  showStatus("Open ChatGPT and wait for a reply to finish.");
+  await refreshDebugStatus();
+  showStatus("Open ChatGPT or Gemini and wait for a reply to finish.");
 }
 
 function showStatus(message) {
@@ -56,46 +76,32 @@ function updateVolumeLabel(volume) {
   volumeValue.textContent = `${Math.round(volume * 100)}%`;
 }
 
-async function playPreviewTone(volume) {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+async function refreshDebugStatus() {
+  const data = await chrome.storage.local.get("debugStatus");
+  const status = data.debugStatus;
 
-  if (!AudioContextClass) {
-    throw new Error("This browser does not support Web Audio.");
+  if (!status) {
+    debugStatusNode.textContent = "No debug data yet.";
+    return;
   }
 
-  const context = new AudioContextClass();
-  const now = context.currentTime;
-  const masterGain = context.createGain();
-
-  masterGain.gain.value = Math.min(1, Math.max(0, volume));
-  masterGain.connect(context.destination);
-
-  playPartial(context, masterGain, 880, now, 0.12);
-  playPartial(context, masterGain, 1318.51, now + 0.11, 0.2);
-
-  await wait(420);
-  await context.close();
+  debugStatusNode.textContent = JSON.stringify(status, null, 2);
 }
 
-function playPartial(context, destination, frequency, startTime, duration) {
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(frequency, startTime);
-
-  gain.gain.setValueAtTime(0.0001, startTime);
-  gain.gain.exponentialRampToValueAtTime(1, startTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + 0.06);
-
-  oscillator.connect(gain);
-  gain.connect(destination);
-  oscillator.start(startTime);
-  oscillator.stop(startTime + duration + 0.06);
-}
-
-function wait(durationMs) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, durationMs);
+async function getActiveSupportedTab() {
+  const tabs = await chrome.tabs.query({
+    active: true,
+    currentWindow: true
   });
+  const tab = tabs[0];
+
+  if (!tab?.url) {
+    return null;
+  }
+
+  if (!SUPPORTED_URL_PREFIXES.some((prefix) => tab.url.startsWith(prefix))) {
+    return null;
+  }
+
+  return tab;
 }

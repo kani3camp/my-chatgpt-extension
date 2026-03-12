@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ChatGPT Response Notifier</title>
+    <title>AI Response Notifier</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main class="panel">
-      <p class="eyebrow">ChatGPT Response Notifier</p>
+      <p class="eyebrow">AI Response Notifier</p>
       <h1>Notification sound</h1>
       <label class="toggle" for="enabled">
         <span>Enabled</span>
@@ -21,8 +21,12 @@
           <output id="volumeValue" for="volume">80%</output>
         </div>
       </label>
-      <button id="testButton" type="button">Test sound</button>
+      <button id="testButton" type="button">Test in active AI tab</button>
       <p id="status" class="status" aria-live="polite"></p>
+      <section class="debug">
+        <p class="debugTitle">Last status</p>
+        <pre id="debugStatus" class="debugStatus">No debug data yet.</pre>
+      </section>
     </main>
     <script src="popup.js"></script>
   </body>

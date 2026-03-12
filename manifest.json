@@ -1,26 +1,31 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Response Notifier",
+  "name": "AI Response Notifier",
   "version": "0.1.0",
-  "description": "Play a notification sound when ChatGPT finishes responding.",
+  "description": "Play a notification sound when ChatGPT or Gemini finishes responding.",
   "permissions": [
     "storage",
-    "offscreen"
+    "offscreen",
+    "tabs"
   ],
   "host_permissions": [
-    "https://chatgpt.com/*"
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://gemini.google.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "ChatGPT Response Notifier",
+    "default_title": "AI Response Notifier",
     "default_popup": "popup.html"
   },
   "content_scripts": [
     {
       "matches": [
-        "https://chatgpt.com/*"
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*"
       ],
       "js": [
         "content.js"
@@ -35,7 +40,9 @@
         "offscreen.js"
       ],
       "matches": [
-        "https://chatgpt.com/*"
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*"
       ]
     }
   ]
